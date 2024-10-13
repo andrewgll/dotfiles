@@ -8,10 +8,13 @@
     home-manager = {
 	url = "github:nix-community/home-manager";
         inputs.nixpkgs.follows = "nixpkgs";
-	};
+    };
+    nixvim = {
+    	url = "github:nix-community/nixvim";
+    	inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
-
-  outputs = inputs@{ self, nix-darwin, nixpkgs, home-manager }:
+      outputs = inputs@{ self, nixvim, nix-darwin, nixpkgs, home-manager }:
   let
     configuration = { pkgs, ... }: {
       # List packages installed in system profile. To search by name, run:
@@ -20,12 +23,14 @@
         [
 	vim
 	htop
-	neovim
+	neofetch
+	nodejs
+	lldb
 	oh-my-zsh
 	git
 	yabai
 	skhd
-        
+	pure-prompt        
 ];
 
       # Auto upgrade nix package and the daemon service.
@@ -37,6 +42,15 @@
 
       # Create /etc/zshrc that loads the nix-darwin environment.
       programs.zsh.enable = true;  # default shell on catalina
+      programs.zsh = {
+      
+      };
+
+ environment.etc."zsh/.zshrc".source = "/Users/mra/.config/zsh/.zshrc";
+  programs.zsh.promptInit = ''
+    prompt_pure_setup
+  '';
+
       # programs.fish.enable = true;
       
       # Set Git commit hash for darwin-version.
@@ -49,8 +63,14 @@
       
       services.yabai.enable = true;
       services.skhd.enable = true;
-
-   
+      imports = [
+        nixvim.nixDarwinModules.nixvim
+      ];
+      programs.nixvim = {
+        enable = true;
+	colorschemes.everforest.enable = true;
+	#colorschemes.ayu.enable = true;
+      };   
       # The platform the configuration will be used on.
 
       nixpkgs.hostPlatform = "aarch64-darwin";
@@ -76,7 +96,6 @@
     darwinConfigurations."Nano" = nix-darwin.lib.darwinSystem {
       modules = [ configuration ];
     };
-
     # Expose the package set, including overlays, for convenience.
     darwinPackages = self.darwinConfigurations."Nano".pkgs;
   };
